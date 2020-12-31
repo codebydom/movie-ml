@@ -2,7 +2,9 @@
 title: "Predicting Movie Ratings Report"
 author: "Dom Pizzano"
 date: "12/30/2020"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 ## Predicting Average Rating of Movie with Number of Ratings per Movie and the Release Year
 
@@ -140,8 +142,8 @@ summary(lmmov2)
 ```
 
 
-Comparing the RMSE of the linear models to see which one was better at predicting the average rating.
-```{r echo=FALSE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+Comparing the RMSE of the linear models to see which one was better at predicting the average rating. Do this by comparing the actual average ratings to the predicted average ratings.
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
 rmse1 <- rmse(edx_by_title$avgRating,predicted_Ratings)
 
 rmse2 <- rmse(edx_by_title$avgRating,predicted_Ratings2)
