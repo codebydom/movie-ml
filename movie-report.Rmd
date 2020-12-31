@@ -10,7 +10,7 @@ output:
 
 # Overview:
 
-Calculating the average movie ratings using the number of ratings and the year released of each movie. Using data from <https://grouplens.org/datasets/movielens/10m/> for the ratings. The data comes in the format of total ratings and has 9000055 total ratings for all movies in the data set. By grouping and running analysis on the data, it will become summarized for each movie, then using a multiple factor linear regression model, predict the average rating for each movie, then compare it to the actual average value of the movie using the RMSE (root mean square error) to determine how accurate our prediction model is. Then repeating the steps to see if running a linear regression model with just the rating count will produce a more accurate prediction model than the mutiple faction (count + year) linear regression model.
+Calculating the average movie ratings using the number of ratings and the year released of each movie. Using data from <https://grouplens.org/datasets/movielens/10m/> for the ratings. The data comes in the format of total ratings and has 9000055 total ratings for all movies in the data set. By grouping and running analysis on the data, it will become summarized for each movie, then using a multiple factor linear regression model, predict the average rating for each movie, then compare it to the actual average value of the movie using the RMSE (root mean square error) to determine how accurate our prediction model is. Then repeating the steps to see if running a linear regression model with just the rating count will produce a more accurate prediction model than the mutiple variable (count + year) linear regression model.
 
 
 
@@ -33,10 +33,10 @@ library(stats)
 dl <- tempfile()
 # download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
 # Error downloading file in this code so just added unzipped ml-10M100K to my current working directory, give exact path to the files, I edited mine
-ratings <- fread(text = gsub("::", "\t", readLines("<your path to ml folder>/ml-10M100K/ratings.dat")),
+ratings <- fread(text = gsub("::", "\t", readLines("<your path to ml directory>/ml-10M100K/ratings.dat")),
                  col.names = c("userId", "movieId", "rating", "timestamp"))
 
-movies <- str_split_fixed(readLines("<your path to ml folder>/ml-10M100K/movies.dat"), "\\::", 3)
+movies <- str_split_fixed(readLines("<your path to ml directory>/ml-10M100K/movies.dat"), "\\::", 3)
 colnames(movies) <- c("movieId", "title", "genres")
 
 
@@ -73,7 +73,7 @@ There are `r edx_rows` rows/ratings in the initial dataset.
 
 # Methods/Analysis:
 
-Next, to process the nine million rating records from the dataset created, we will need to do a few steps to clean the data and manipulate it to get the summarized data needed from it.
+Next, to process the nine million rating records from the dataset created, there are a few steps to clean the data and manipulate it to get the summarized data format needed for the analysis.
 
 1.) Grouping the data by movidId  
 2.) Mutating/adding data columns for our new summarized data  
@@ -105,7 +105,7 @@ To view how the data looks, plot the relation of ratings count and the average r
 plot(edx_by_title$count,edx_by_title$avgRating)
 ```
 
-Create the linear regression models for the data frame edx_by_title for rating count and year released for each movie.
+Create the linear regression models for the data frame edx_by_title column average rating using rating count and year released for each movie.
 
 ```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
 lmmov <- lm(avgRating ~ count + year, data=edx_by_title)
@@ -116,7 +116,7 @@ Creating a linear regression for average rating just based on the rating count f
 lmmov2 <- lm(avgRating ~ count, data=edx_by_title)
 ```
 
-Predicting the average ratings of each movie use the predict function with the linear models we created.
+Predicting the average ratings of each movie use the predict function with the linear models created above.
 ```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
 newdata <- data.frame(count=edx_by_title$count,year=edx_by_title$year)
 predicted_Ratings <- predict(lmmov,newdata)
@@ -127,7 +127,7 @@ predicted_Ratings2 <- predict(lmmov2,newdata2)
 
 # Results:
 
-Here is a preview of the data with the average rating compared to the predicted average rating.
+Here is a preview of the data with the average rating compared to the predicted average rating for the first linear model created (lmmov).
 ```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
 edx_by_title$prediction <- predicted_Ratings
 edx_by_title %>% select(title,avgRating,prediction) %>% head(n=5)
