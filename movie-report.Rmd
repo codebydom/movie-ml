@@ -1,0 +1,162 @@
+---
+title: "Predicting Movie Ratings Report"
+author: "Dom Pizzano"
+date: "12/30/2020"
+output: pdf_document
+---
+## Predicting Average Rating of Movie with Number of Ratings per Movie and the Release Year
+
+# Overview:
+
+Calculating the average movie ratings using the number of ratings and the year released of each movie. Using data from <https://grouplens.org/datasets/movielens/10m/> for the ratings. The data comes in the format of total ratings and has 9000055 total ratings for all movies in the data set. By grouping and running analysis on the data, it will become summarized for each movie, then using a multiple factor linear regression model, predict the average rating for each movie, then compare it to the actual average value of the movie using the RMSE (root mean square error) to determine how accurate our prediction model is. Then repeating the steps to see if running a linear regression model with just the rating count will produce a more accurate prediction model than the mutiple faction (count + year) linear regression model.
+
+
+
+First to load in the data as used in the EDx course to get our edx dataset with the total ratings.
+```{r echo=FALSE,comment = "", prompt=FALSE,message=FALSE,warning=FALSE}
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+library(Metrics) 
+library(tidyverse)
+library(caret)
+library(data.table)
+library(stats)
+
+
+# MovieLens 10M dataset:
+# https://grouplens.org/datasets/movielens/10m/
+# http://files.grouplens.org/datasets/movielens/ml-10m.zip
+
+dl <- tempfile()
+# download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+# Error downloading file in this code so just added unzipped ml-10M100K to my current working directory, give exact path to the files, I edited mine
+ratings <- fread(text = gsub("::", "\t", readLines("C:/Users/dom/Documents/ml-10M100K/ratings.dat")),
+                 col.names = c("userId", "movieId", "rating", "timestamp"))
+
+movies <- str_split_fixed(readLines("C:/Users/dom/Documents/ml-10M100K/movies.dat"), "\\::", 3)
+colnames(movies) <- c("movieId", "title", "genres")
+
+
+# if using R 4.0 or later:
+movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
+                                           title = as.character(title),
+                                           genres = as.character(genres))
+
+
+
+movielens <- left_join(ratings, movies, by = "movieId")
+
+# Validation set will be 10% of MovieLens data
+set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+edx <- movielens[-test_index,]
+temp <- movielens[test_index,]
+
+# Make sure userId and movieId in validation set are also in edx set
+validation <- temp %>% 
+  semi_join(edx, by = "movieId") %>%
+  semi_join(edx, by = "userId")
+
+# Add rows removed from validation set back into edx set
+removed <- anti_join(temp, validation)
+edx <- rbind(edx, removed)
+
+rm(dl, ratings, movies, test_index, temp, movielens, removed)
+
+## ALL CODE ABOVE IS PROVIDED BY THE CORSE in order to get the base EDX code for this assignment
+edx_rows <- nrow(edx)
+```
+There are `r edx_rows` rows/ratings in the initial dataset.
+
+# Methods/Analysis:
+
+Next, to process the nine million rating records from the dataset created, we will need to do a few steps to clean the data and manipulate it to get the summarized data needed from it.
+
+1.) Grouping the data by movidId  
+2.) Mutating/adding data columns for our new summarized data  
+3.) Calculating the total number of ratings for each movie  
+4.) Calculating the sum of total ratings for each movie  
+5.) Calculating the average rating for each movie by dividing the sum of total ratings by the total number of ratings for each movie  
+6.) Extracting the year of the movie from the title using a string split and string remove all parenthesizes  
+7.) Filtering out the movies that have less than 9 ratings because their averages are very skewed because of the low number of ratings  
+8.) Only collecting the unique values of the movieId's  
+9.) Arranging by average rating descending (to see which movies have the highest average rating)  
+
+Results of Data Pre-Processing:
+```{r echo=TRUE,comment = "", prompt=FALSE,message=FALSE,warning=FALSE,tidy=TRUE}
+edx_by_title <- edx %>% group_by(movieId) %>%
+  mutate(RatingSum = sum(rating),
+  count=n(),
+  avgRating=RatingSum/count,
+  year= strtoi(str_remove_all(str_sub(title,-5,-1),"[()]"))) %>%
+  summarise(title,avgRating,year,count) %>%
+  filter(count>=9) %>%
+  unique(.) %>%
+  arrange(-avgRating)
+head(edx_by_title,10)
+```
+
+To view how the data looks, plot the relation of ratings count and the average rating of each movie. To see if count could be a good predictor of average rating, create linear models and run an RMSE, also to see how year released affects the prediction, that will be a factor in one of the models.
+
+```{r echo=FALSE,comment = "", prompt=FALSE,message=FALSE,warning=FALSE,tidy=TRUE}
+plot(edx_by_title$count,edx_by_title$avgRating)
+```
+
+Create the linear regression models for the data frame edx_by_title for rating count and year released for each movie.
+
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+lmmov <- lm(avgRating ~ count + year, data=edx_by_title)
+```
+
+Creating a linear regression for average rating just based on the rating count for each movie.
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+lmmov2 <- lm(avgRating ~ count, data=edx_by_title)
+```
+
+Predicting the average ratings of each movie use the predict function with the linear models we created.
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+newdata <- data.frame(count=edx_by_title$count,year=edx_by_title$year)
+predicted_Ratings <- predict(lmmov,newdata)
+newdata2 <- data.frame(count=edx_by_title$count)
+predicted_Ratings2 <- predict(lmmov2,newdata2)
+```
+
+
+# Results:
+
+Here is a preview of the data with the average rating compared to the predicted average rating.
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+edx_by_title$prediction <- predicted_Ratings
+edx_by_title %>% select(title,avgRating,prediction) %>% head(n=5)
+```
+
+
+Here is the statistical summary that shows the significance of each linear model. The p values here show how significant the variable is in determining the predicted average rating.
+
+```{r echo=TRUE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+summary(lmmov)
+summary(lmmov2)
+```
+
+
+Comparing the RMSE of the linear models to see which one was better at predicting the average rating.
+```{r echo=FALSE,comment = "", prompt=TRUE,message=FALSE,warning=FALSE,tidy=TRUE}
+rmse1 <- rmse(edx_by_title$avgRating,predicted_Ratings)
+
+rmse2 <- rmse(edx_by_title$avgRating,predicted_Ratings2)
+```
+Linear model (count+year variables) RMSE: `r rmse1`  
+            vs  
+Linear model (count variable) RMSE: `r rmse2`  
+
+# Conclusion:  
+The conclusion that can be drawn from the RMSE's above is that it is more accurate to have a multiple variable linear regression model with count and year variables to predict the average movie rating than it is to just use count to predict the average movie rating. Both variables year and the count had p values that showed it significantly could predict the average rating of the movie. Both linear models RMSEs were less than .8649, a goal for the assignment.  
+
+
+
+
+
+
+
+
