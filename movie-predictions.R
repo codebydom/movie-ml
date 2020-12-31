@@ -6,7 +6,7 @@ library(tidyverse)
 library(caret)
 library(data.table)
 library(stats)
-library(ggplot2)
+
 
 # MovieLens 10M dataset:
 # https://grouplens.org/datasets/movielens/10m/
@@ -48,7 +48,7 @@ edx <- rbind(edx, removed)
 
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
-## ALL CODE ABOVE IS PROVIDED BY THE CORSE
+## ALL CODE ABOVE IS PROVIDED BY THE COURSE TO HAVE STARTING FUNCTIONAL DATA SET
 
 
 
@@ -67,7 +67,7 @@ dim(edx)
 # the title and removing any parethesis i.e: ( )  
 
 # edx_by_title gives us a data frame of the title, average rating, year released, and number of ratings for each movie
-# filter by count >= 5 because movies can have skewwed averages because of a low rating count
+# filter by count >= 9 because movies can have skewed averages because of a low rating count
 
 edx_by_title <- edx %>% group_by(movieId) %>%
   mutate(RatingSum = sum(rating),

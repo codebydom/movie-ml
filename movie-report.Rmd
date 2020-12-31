@@ -33,10 +33,10 @@ library(stats)
 dl <- tempfile()
 # download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
 # Error downloading file in this code so just added unzipped ml-10M100K to my current working directory, give exact path to the files, I edited mine
-ratings <- fread(text = gsub("::", "\t", readLines("C:/Users/dom/Documents/ml-10M100K/ratings.dat")),
+ratings <- fread(text = gsub("::", "\t", readLines("<your path to ml folder>/ml-10M100K/ratings.dat")),
                  col.names = c("userId", "movieId", "rating", "timestamp"))
 
-movies <- str_split_fixed(readLines("C:/Users/dom/Documents/ml-10M100K/movies.dat"), "\\::", 3)
+movies <- str_split_fixed(readLines("<your path to ml folder>/ml-10M100K/movies.dat"), "\\::", 3)
 colnames(movies) <- c("movieId", "title", "genres")
 
 
